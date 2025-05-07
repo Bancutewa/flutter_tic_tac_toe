@@ -1,0 +1,104 @@
+# Hướng dẫn Code và Luồng Chạy của Trò chơi Cờ Caro
+
+Tài liệu này giải thích chi tiết về logic code và luồng hoạt động của ứng dụng trò chơi Cờ Caro (Tic Tac Toe) được phát triển bằng Flutter.
+
+## 1. Cấu trúc Dự án và Các File Chính
+
+Dự án bao gồm hai file Dart chính đóng vai trò quan trọng trong ứng dụng:
+
+*   `lib/home_page.dart`: Chứa widget `HomePage`, là màn hình khởi đầu để người chơi chọn kích thước bàn cờ.
+*   `lib/main.dart`: Chứa widget `TicTacToePage`, là màn hình chính nơi diễn ra trò chơi, xử lý toàn bộ logic game và hiển thị giao diện bàn cờ.
+
+## 2. Luồng Hoạt động của Ứng dụng
+
+Luồng hoạt động cơ bản của ứng dụng diễn ra như sau:
+
+1.  **Khởi động:** Khi ứng dụng được chạy, hàm `main()` trong `lib/main.dart` được thực thi, khởi tạo widget `MyApp`.
+2.  **Màn hình Chọn Kích thước:** `MyApp` hiển thị `HomePage` làm màn hình đầu tiên. `HomePage` trình bày các nút để người chơi chọn kích thước bàn cờ (3x3, 4x4, 5x5).
+3.  **Điều hướng đến Game:** Khi người chơi nhấn vào một nút kích thước bàn cờ, sự kiện `onPressed` của nút đó sẽ được kích hoạt. Bên trong `onPressed`, sử dụng `Navigator.push` để điều hướng đến `TicTacToePage`. Quan trọng là, kích thước bàn cờ được chọn (`boardSize`) được truyền như một tham số vào constructor của `TicTacToePage`.
+4.  **Khởi tạo Game:** `TicTacToePage` nhận giá trị `boardSize` và sử dụng nó để khởi tạo trạng thái game, bao gồm việc tạo một bàn cờ trống với kích thước phù hợp và thiết lập lượt đi ban đầu là cho người chơi 'X'.
+5.  **Chơi Game:** Người chơi lần lượt chạm vào các ô trên bàn cờ để thực hiện nước đi của mình.
+6.  **Xử lý Nước đi:** Khi một ô được chạm, hàm `_handleTap` trong `TicTacToePageState` được gọi. Hàm này kiểm tra tính hợp lệ của nước đi (ô có trống không) và cập nhật trạng thái của bàn cờ bằng ký hiệu của người chơi hiện tại ('X' hoặc 'O'). Sau đó, nó chuyển lượt cho người chơi tiếp theo và gọi hàm kiểm tra thắng/hòa.
+7.  **Kiểm tra Kết quả:** Hàm `_checkWinner` được chạy sau mỗi nước đi. Nó kiểm tra các điều kiện thắng (hàng, cột, đường chéo) dựa trên trạng thái hiện tại của bàn cờ. Logic này được thiết kế linh hoạt để hoạt động với bất kỳ kích thước bàn cờ nào được xác định bởi `boardSize`. Nếu phát hiện có người thắng hoặc tất cả các ô đã đầy (hòa), trò chơi sẽ kết thúc.
+8.  **Kết thúc Game:** Hàm `_endGame` được gọi khi có kết quả thắng hoặc hòa. Nó hiển thị một AlertDialog thông báo kết quả và cung cấp tùy chọn để người chơi chơi lại.
+9.  **Chơi Lại:** Nhấn nút "Reset Game" trong AlertDialog hoặc trên màn hình game sẽ gọi hàm `_resetGame`, hàm này đặt lại trạng thái của bàn cờ và các biến về trạng thái ban đầu để bắt đầu một ván đấu mới với cùng kích thước bàn cờ.
+
+## 3. Logic Code Chi Tiết
+
+### 3.1. HomePage (`lib/home_page.dart`)
+
+*   Là một `StatelessWidget` vì trạng thái của nó không thay đổi sau khi được xây dựng.
+*   Trong phương thức `build`, nó trả về một `Scaffold` với một `AppBar` đơn giản và phần `body`.
+*   Phần `body` chứa một `Container` với hiệu ứng gradient làm nền để tạo giao diện đẹp mắt hơn.
+*   Bên trong `Container` là một `Column` chứa tiêu đề và các `ElevatedButton`.
+*   Mỗi `ElevatedButton` tương ứng với một kích thước bàn cờ (3x3, 4x4, 5x5).
+*   Sự kiện `onPressed` của mỗi nút tạo ra một `MaterialPageRoute` để điều hướng đến `TicTacToePage`, truyền giá trị kích thước bàn cờ tương ứng (`3`, `4`, hoặc `5`) thông qua constructor `TicTacToePage(boardSize: ...)`.
+
+### 3.2. TicTacToePage (`lib/main.dart`)
+
+*   Là một `StatefulWidget` vì trạng thái của bàn cờ và lượt chơi thay đổi trong quá trình chơi game.
+*   Có một thuộc tính `boardSize` (kiểu `int`) được truyền từ `HomePage` để xác định kích thước của bàn cờ.
+*   **`_TicTacToePageState`:** Đây là đối tượng quản lý trạng thái của `TicTacToePage`.
+    *   **Trạng thái:**
+        *   `_board`: `List<String>` lưu trữ trạng thái của từng ô trên bàn cờ. Kích thước của list này là `boardSize * boardSize`. Mỗi phần tử là `''` (trống), `'X'`, hoặc `'O'`.
+        *   `_isPlayer1`: `bool` theo dõi lượt chơi hiện tại (`true` nếu là lượt của người chơi 'X', `false` nếu là lượt của người chơi 'O').
+        *   `_status`: `String` lưu trữ thông báo trạng thái hiện tại hiển thị trên màn hình (ví dụ: "Lượt của người chơi X", "Người chơi X Thắng!").
+    *   **`initState()`:** Được gọi một lần khi widget được tạo. Nó gọi `_initializeBoard()` để thiết lập trạng thái ban đầu của game dựa trên `widget.boardSize`.
+    *   **`_initializeBoard()`:** Thiết lập lại `_board` thành một list trống với kích thước `size * size`, đặt lại `_isPlayer1` thành `true` và cập nhật `_status` về trạng thái lượt đi ban đầu.
+    *   **`_handleTap(int index)`:** Xử lý khi người chơi chạm vào ô thứ `index`.
+        *   Kiểm tra xem ô tại `index` có trống không (`_board[index] == ''`) và trò chơi vẫn đang diễn ra (kiểm tra `_status` không chứa "Wins!" hoặc "Draw!").
+        *   Nếu hợp lệ, cập nhật `_board[index]` bằng ký hiệu của người chơi hiện tại (`_isPlayer1 ? 'X' : 'O'`).
+        *   Chuyển lượt chơi bằng cách đảo giá trị của `_isPlayer1`.
+        *   Gọi `_checkWinner()` để kiểm tra kết quả sau nước đi.
+        *   Sử dụng `setState` để thông báo cho Flutter rằng trạng thái đã thay đổi và cần xây dựng lại giao diện.
+    *   **`_checkWinner()`:** Kiểm tra các điều kiện thắng và hòa một cách bất đồng bộ (`async`).
+        *   Lấy kích thước bàn cờ (`size = widget.boardSize`).
+        *   **Kiểm tra Hàng:** Duyệt qua từng hàng. Đối với mỗi hàng, kiểm tra xem tất cả các ô trong hàng đó có cùng một ký hiệu và không phải là ô trống hay không.
+        *   **Kiểm tra Cột:** Duyệt qua từng cột. Đối với mỗi cột, kiểm tra tương tự như kiểm tra hàng.
+        *   **Kiểm tra Đường chéo chính:** Kiểm tra các ô trên đường chéo từ góc trên bên trái xuống góc dưới bên phải.
+        *   **Kiểm tra Đường chéo phụ:** Kiểm tra các ô trên đường chéo từ góc trên bên phải xuống góc dưới bên trái.
+        *   Logic kiểm tra thắng sử dụng `size` để tính toán các chỉ số và điều kiện lặp một cách linh hoạt, phù hợp với mọi kích thước bàn cờ.
+        *   Sử dụng `await Future.delayed(Duration.zero);` sau mỗi khối kiểm tra (hàng, cột, đường chéo) để cho phép giao diện được cập nhật một cách mượt mà, tránh bị đơ khi kiểm tra trên các bàn cờ lớn.
+        *   Nếu tìm thấy người thắng, gọi `_endGame()` và kết thúc hàm.
+        *   **Kiểm tra Hòa:** Nếu không có người thắng và `_board` không còn ô trống nào (`!_board.contains('')`), gọi `_endGame('Draw')`.
+        *   Nếu game chưa kết thúc, cập nhật `_status` để hiển thị lượt chơi tiếp theo.
+    *   **`_endGame(String winner)`:** Hiển thị một `AlertDialog` thông báo kết quả game (người thắng hoặc hòa).
+        *   Tạo thông báo phù hợp dựa trên giá trị `winner`.
+        *   AlertDialog có tiêu đề "Game Over", nội dung là thông báo kết quả và một `TextButton` với nội dung "Reset Game".
+        *   Khi nhấn nút "Reset Game" trong dialog, gọi `_resetGame()` và đóng dialog.
+        *   Giao diện của AlertDialog được tùy chỉnh để phù hợp với phong cách cổ điển của game.
+    *   **`_resetGame()`:** Được gọi để bắt đầu ván mới. Sử dụng `setState` để đảm bảo giao diện được cập nhật sau khi gọi `_initializeBoard()` để đặt lại trạng thái.
+    *   **`build(BuildContext context)`:** Xây dựng giao diện người dùng cho màn hình game.
+        *   Trả về một `Scaffold` với `AppBar` hiển thị kích thước bàn cờ hiện tại.
+        *   Phần `body` chứa một `Column` với các widget con:
+            *   `Text` hiển thị trạng thái game hiện tại (`_status`).
+            *   `GridView.builder`: Widget chính để xây dựng bàn cờ.
+                *   `shrinkWrap: true` giúp `GridView` chỉ chiếm không gian cần thiết.
+                *   `padding` và `crossAxisSpacing`, `mainAxisSpacing` điều chỉnh khoảng cách.
+                *   `gridDelegate`: `SliverGridDelegateWithFixedCrossAxisCount` được sử dụng để xác định số lượng cột cố định (`crossAxisCount`). Giá trị này được đặt bằng `widget.boardSize` để bàn cờ có kích thước `boardSize x boardSize`.
+                *   `itemCount`: Tổng số ô trên bàn cờ, bằng `widget.boardSize * widget.boardSize`.
+                *   `itemBuilder`: Hàm được gọi để xây dựng từng ô riêng lẻ trên bàn cờ. Mỗi ô là một `GestureDetector` bọc quanh một `Container`.
+                    *   `GestureDetector` có `onTap` gọi `_handleTap(index)` khi ô được chạm.
+                    *   `Container` đại diện cho hình dạng và viền của ô.
+                    *   Bên trong `Container` là một `Center` chứa `Text` hiển thị ký hiệu ('X', 'O', hoặc trống) với kích thước và kiểu dáng phù hợp với phong cách cổ điển.
+            *   `ElevatedButton` "Reset Game" gọi `_resetGame` khi được nhấn.
+
+## 4. Phong cách Giao diện Cổ điển
+
+Ứng dụng được thiết kế với giao diện mang phong cách cổ điển, thể hiện qua:
+
+*   Cách hiển thị bàn cờ với viền đơn giản.
+*   Kiểu dáng và màu sắc của các ký hiệu 'X' và 'O'.
+*   Giao diện của AlertDialog thông báo kết quả game.
+*   Màu sắc và kiểu dáng của các nút trên `HomePage`.
+
+Những yếu tố này kết hợp lại để tạo ra một trải nghiệm game hoài cổ.
+
+## 5. Cách Chạy Ứng dụng
+
+Để chạy ứng dụng này, bạn cần cài đặt Flutter SDK. Sau đó:
+
+1.  Mở terminal trong thư mục gốc của dự án.
+2.  Chạy lệnh `flutter pub get` để tải các gói dependency cần thiết.
+3.  Kết nối thiết bị Android/iOS hoặc khởi chạy emulator/simulator.
+4.  Chạy lệnh `flutter run` để biên dịch và triển khai ứng dụng lên thiết bị/emulator.
